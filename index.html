@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>フォント変換ツール</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 40px;
+      background: #f5f5f5;
+    }
+    #container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      width: 640px;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+      font-family: sans-serif;
+    }
+    .fontlist {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .fontlist button {
+      padding: 6px 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #f0f0f0;
+      cursor: pointer;
+    }
+    .fontlist button.active {
+      background: #ffeaea;
+      border-color: #f99;
+    }
+    #tab_control {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    #tab_control a {
+      flex: 1;
+      text-align: center;
+      padding: 6px 0;
+      background: #f0f0f0;
+      border-radius: 4px 4px 0 0;
+      text-decoration: none;
+      color: black;
+    }
+    #tab_control a.active {
+      background: white;
+    }
+    #status_label {
+      flex: 1;
+      text-align: right;
+      font-size: 12px;
+      padding: 6px 8px 0 0;
+    }
+    .button {
+      display: inline-block;
+      padding: 10px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .tweet_button {
+      background: #d0eaff;
+    }
+    hr {
+      border: 0;
+      height: 1px;
+      background: #ddd;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <form name="f">
+      <textarea id="input" placeholder="ここに文章を入力してフォントを選ぶ" rows="3" style="width:100%;font-size:18px;margin-bottom:10px;"></textarea>
+      <div id="tab_body">
+        <div id="tabp_font">
+          <ul class="fontlist"></ul>
+        </div>
+      </div>
+    </form>
+    <div style="padding:1ex 0px 2ex 0px; text-align:center; font-size:150%; line-height:200%;">
+      <button class="button tweet_button" id="button_copy" type="button">コピー</button>
+    </div>
+    <hr>
+    <p style="text-align: center;">&copy; <a href="https://discord.gg/JRPRpcaNau" target="_blank">Freeze</a></p>
+  </div>
+
+  <script>
+// =========================
+// フォントスタイル定義
+// =========================
+const styles = [
+  { key: 'normal', label: 'Normal' },
+  { key: 'bold', label: '𝐀𝐁𝐚𝐛𝛂𝛃𝟏𝟐' },
+  { key: 'italic', label: '𝐴𝐵𝑎𝑏𝛼𝛽' },
+  { key: 'bolditalic', label: '𝑨𝑩𝒂𝒃𝜶𝜷' },
+  { key: 'sans', label: '𝖠𝖡𝖺𝖻𝟣𝟤' },
+  { key: 'sansBold', label: '𝗔𝗕𝗮𝗯𝝰𝝱𝟭𝟮' },
+  { key: 'sansItalic', label: '𝘈𝘉𝘢𝘣' },
+  { key: 'sansBoldItalic', label: '𝘼𝘽𝙖𝙗𝞪𝞫' }
+];
+
+// =========================
+// 変換マップ生成関数
+// =========================
+function makeMap(upperBase, lowerBase, digitBase) {
+  return function(text) {
+    return text.replace(/[A-Za-z0-9]/g, function(c) {
+      if (/[A-Z]/.test(c) && upperBase !== null) {
+        return String.fromCodePoint(upperBase + c.charCodeAt(0) - 65);
+      }
+      if (/[a-z]/.test(c) && lowerBase !== null) {
+        return String.fromCodePoint(lowerBase + c.charCodeAt(0) - 97);
+      }
+      if (/[0-9]/.test(c) && digitBase !== null) {
+        return String.fromCodePoint(digitBase + c.charCodeAt(0) - 48);
+      }
+      return c;
+    });
+  };
+}
+
+const maps = {
+  normal: function(text) { return text; },
+  bold: makeMap(0x1D400, 0x1D41A, 0x1D7CE),
+  italic: makeMap(0x1D434, 0x1D44E, null),
+  bolditalic: makeMap(0x1D468, 0x1D482, null),
+  sans: makeMap(0x1D5A0, 0x1D5BA, null),
+  sansBold: makeMap(0x1D5D4, 0x1D5EE, 0x1D7EC),
+  sansItalic: makeMap(0x1D608, 0x1D622, null),
+  sansBoldItalic: makeMap(0x1D63C, 0x1D656, null)
+};
+
+// =========================
+// DOM取得・初期値
+// =========================
+const fontListUl = document.querySelector('.fontlist');
+const input = document.getElementById('input');
+const copyBtn = document.getElementById('button_copy');
+let currentStyle = 'normal';
+let rawText = '';
+
+// =========================
+// フォントボタン生成
+// =========================
+styles.forEach(function(style) {
+  const btn = document.createElement('button');
+  btn.textContent = style.label;
+  btn.dataset.key = style.key;
+  btn.type = 'button';
+  btn.className = 'font-btn';
+  if (style.key === 'normal') btn.classList.add('active');
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.font-btn').forEach(function(b) {
+      b.classList.remove('active');
+    });
+    btn.classList.add('active');
+    currentStyle = style.key;
+    updateText();
+  });
+  const li = document.createElement('li');
+  li.appendChild(btn);
+  fontListUl.appendChild(li);
+});
+
+// =========================
+// 入力イベント
+// =========================
+input.addEventListener('input', function() {
+  rawText = input.value;
+  updateText();
+});
+
+// =========================
+// テキスト変換
+// =========================
+function updateText() {
+  var txt = rawText;
+  input.value = (maps[currentStyle] || maps.normal)(txt);
+}
+
+// =========================
+// コピー処理
+// =========================
+copyBtn.addEventListener('click', async function() {
+  try {
+    await navigator.clipboard.writeText(input.value);
+    copyBtn.textContent = 'コピーしました!';
+    copyBtn.disabled = true;
+    setTimeout(function() {
+      copyBtn.textContent = 'コピー';
+      copyBtn.disabled = false;
+    }, 1200);
+  } catch {
+    alert('コピーに失敗しました');
+  }
+});
+  </script>
+</body>
+</html>
