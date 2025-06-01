@@ -90,135 +90,156 @@
       background: #ddd;
       margin: 20px 0;
     }
+    /* 説明用（省略可） */
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 4px;
+    }
+    #output {
+      background: #f9f9f9;
+      color: #333;
+      /* 読み取り専用なのでカーソル等わかりやすく */
+    }
   </style>
 </head>
 <body>
   <div id="container">
     <form name="f">
-      <textarea id="input" placeholder="ここに文章を入力してフォントを選ぶ" rows="3" style="width:100%;font-size:18px;margin-bottom:10px;"></textarea>
-      <div id="tab_body">
+      <!-- 元テキスト入力用 -->
+      <label for="input">▶ 入力テキスト（プレーンテキスト）</label>
+      <textarea id="input" placeholder="ここに文章を入力してフォントを選ぶ" rows="3"></textarea>
+
+      <!-- フォントボタン -->
+      <div id="tab_body" style="margin: 12px 0;">
         <div id="tabp_font">
           <ul class="fontlist"></ul>
         </div>
       </div>
+
+      <!-- 変換後表示用 -->
+      <label for="output">▶ 変換後テキスト（自動更新・コピー用）</label>
+      <textarea id="output" rows="3" readonly></textarea>
+
+      <div style="padding:1ex 0px 2ex 0px; text-align:center; font-size:150%; line-height:200%;">
+        <button class="button tweet_button" id="button_copy" type="button">コピー</button>
+      </div>
     </form>
-    <div style="padding:1ex 0px 2ex 0px; text-align:center; font-size:150%; line-height:200%;">
-      <button class="button tweet_button" id="button_copy" type="button">コピー</button>
-    </div>
     <hr>
     <p style="text-align: center;">&copy; <a href="https://discord.gg/JRPRpcaNau" target="_blank">Freeze</a></p>
   </div>
 
   <script>
-// =========================
-// フォントスタイル定義
-// =========================
-const styles = [
-  { key: 'normal', label: 'Normal' },
-  { key: 'bold', label: '𝐀𝐁𝐚𝐛𝛂𝛃𝟏𝟐' },
-  { key: 'italic', label: '𝐴𝐵𝑎𝑏𝛼𝛽' },
-  { key: 'bolditalic', label: '𝑨𝑩𝒂𝒃𝜶𝜷' },
-  { key: 'sans', label: '𝖠𝖡𝖺𝖻𝟣𝟤' },
-  { key: 'sansBold', label: '𝗔𝗕𝗮𝗯𝝰𝝱𝟭𝟮' },
-  { key: 'sansItalic', label: '𝘈𝘉𝘢𝘣' },
-  { key: 'sansBoldItalic', label: '𝘼𝘽𝙖𝙗𝞪𝞫' }
-];
+  // =========================
+  // フォントスタイル定義
+  // =========================
+  const styles = [
+    { key: 'normal', label: 'Normal' },
+    { key: 'bold', label: '𝐀𝐁𝐚𝐛𝛂𝛃𝟏𝟐' },
+    { key: 'bolditalic', label: '𝑨𝑩𝒂𝒃𝜶𝜷' },
+    { key: 'sans', label: '𝖠𝖡𝖺𝖻𝟣𝟤' },
+    { key: 'sansBold', label: '𝗔𝗕𝗮𝗯𝝰𝝱𝟭𝟮' },
+    { key: 'sansItalic', label: '𝘈𝘉𝘢𝘣' },
+    { key: 'sansBoldItalic', label: '𝘼𝘽𝙖𝙗𝞪𝞫' }
+  ];
 
-// =========================
-// 変換マップ生成関数
-// =========================
-function makeMap(upperBase, lowerBase, digitBase) {
-  return function(text) {
-    return text.replace(/[A-Za-z0-9]/g, function(c) {
-      if (/[A-Z]/.test(c) && upperBase !== null) {
-        return String.fromCodePoint(upperBase + c.charCodeAt(0) - 65);
-      }
-      if (/[a-z]/.test(c) && lowerBase !== null) {
-        return String.fromCodePoint(lowerBase + c.charCodeAt(0) - 97);
-      }
-      if (/[0-9]/.test(c) && digitBase !== null) {
-        return String.fromCodePoint(digitBase + c.charCodeAt(0) - 48);
-      }
-      return c;
-    });
-  };
-}
-
-const maps = {
-  normal: function(text) { return text; },
-  bold: makeMap(0x1D400, 0x1D41A, 0x1D7CE),
-  italic: makeMap(0x1D434, 0x1D44E, null),
-  bolditalic: makeMap(0x1D468, 0x1D482, null),
-  sans: makeMap(0x1D5A0, 0x1D5BA, null),
-  sansBold: makeMap(0x1D5D4, 0x1D5EE, 0x1D7EC),
-  sansItalic: makeMap(0x1D608, 0x1D622, null),
-  sansBoldItalic: makeMap(0x1D63C, 0x1D656, null)
-};
-
-// =========================
-// DOM取得・初期値
-// =========================
-const fontListUl = document.querySelector('.fontlist');
-const input = document.getElementById('input');
-const copyBtn = document.getElementById('button_copy');
-let currentStyle = 'normal';
-let rawText = '';
-
-// =========================
-// フォントボタン生成
-// =========================
-styles.forEach(function(style) {
-  const btn = document.createElement('button');
-  btn.textContent = style.label;
-  btn.dataset.key = style.key;
-  btn.type = 'button';
-  btn.className = 'font-btn';
-  if (style.key === 'normal') btn.classList.add('active');
-  btn.addEventListener('click', function() {
-    document.querySelectorAll('.font-btn').forEach(function(b) {
-      b.classList.remove('active');
-    });
-    btn.classList.add('active');
-    currentStyle = style.key;
-    updateText();
-  });
-  const li = document.createElement('li');
-  li.appendChild(btn);
-  fontListUl.appendChild(li);
-});
-
-// =========================
-// 入力イベント
-// =========================
-input.addEventListener('input', function() {
-  rawText = input.value;
-  updateText();
-});
-
-// =========================
-// テキスト変換
-// =========================
-function updateText() {
-  var txt = rawText;
-  input.value = (maps[currentStyle] || maps.normal)(txt);
-}
-
-// =========================
-// コピー処理
-// =========================
-copyBtn.addEventListener('click', async function() {
-  try {
-    await navigator.clipboard.writeText(input.value);
-    copyBtn.textContent = 'コピーしました!';
-    copyBtn.disabled = true;
-    setTimeout(function() {
-      copyBtn.textContent = 'コピー';
-      copyBtn.disabled = false;
-    }, 1200);
-  } catch {
-    alert('コピーに失敗しました');
+  // =========================
+  // 変換マップ生成関数
+  // =========================
+  function makeMap(upperBase, lowerBase, digitBase) {
+    return function(text) {
+      return text.replace(/[A-Za-z0-9]/g, function(c) {
+        if (/[A-Z]/.test(c) && upperBase !== null) {
+          return String.fromCodePoint(upperBase + c.charCodeAt(0) - 65);
+        }
+        if (/[a-z]/.test(c) && lowerBase !== null) {
+          return String.fromCodePoint(lowerBase + c.charCodeAt(0) - 97);
+        }
+        if (/[0-9]/.test(c) && digitBase !== null) {
+          return String.fromCodePoint(digitBase + c.charCodeAt(0) - 48);
+        }
+        return c;
+      });
+    };
   }
-});
+
+  const maps = {
+    normal:   text => text,
+    bold:     makeMap(0x1D400, 0x1D41A, 0x1D7CE),
+    italic:   makeMap(0x1D434, 0x1D44E, null),
+    bolditalic:   makeMap(0x1D468, 0x1D482, null),
+    sans:     makeMap(0x1D5A0, 0x1D5BA, null),
+    sansBold: makeMap(0x1D5D4, 0x1D5EE, 0x1D7EC),
+    sansItalic: makeMap(0x1D608, 0x1D622, null),
+    sansBoldItalic: makeMap(0x1D63C, 0x1D656, null)
+  };
+
+  // =========================
+  // DOM取得・初期値
+  // =========================
+  const fontListUl = document.querySelector('.fontlist');
+  const input = document.getElementById('input');     // プレーンテキスト入力
+  const output = document.getElementById('output');   // 変換後表示（読み取り専用）
+  const copyBtn = document.getElementById('button_copy');
+  let currentStyle = 'normal';
+
+  // =========================
+  // フォントボタン生成
+  // =========================
+  styles.forEach(function(style) {
+    const btn = document.createElement('button');
+    btn.textContent = style.label;
+    btn.dataset.key = style.key;
+    btn.type = 'button';
+    btn.className = 'font-btn';
+    if (style.key === 'normal') btn.classList.add('active');
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.font-btn').forEach(function(b) {
+        b.classList.remove('active');
+      });
+      btn.classList.add('active');
+      currentStyle = style.key;
+      updateOutput();  // スタイル切り替え時にも再変換
+    });
+    const li = document.createElement('li');
+    li.appendChild(btn);
+    fontListUl.appendChild(li);
+  });
+
+  // =========================
+  // 入力イベント
+  // =========================
+  input.addEventListener('input', function() {
+    // プレーンテキスト（input.value）をそのまま変換する
+    updateOutput();
+  });
+
+  // =========================
+  // テキスト変換（全体を再マッピング）
+  // =========================
+  function updateOutput() {
+    const plain = input.value; // 常に「未変換のプレーンテキスト」
+    // マップ関数を呼び出して、変換後を output にセット
+    const fn = maps[currentStyle] || maps.normal;
+    output.value = fn(plain);
+  }
+
+  // =========================
+  // コピー処理
+  // =========================
+  copyBtn.addEventListener('click', async function() {
+    try {
+      await navigator.clipboard.writeText(output.value);
+      copyBtn.textContent = 'コピーしました!';
+      copyBtn.disabled = true;
+      setTimeout(function() {
+        copyBtn.textContent = 'コピー';
+        copyBtn.disabled = false;
+      }, 1200);
+    } catch {
+      alert('コピーに失敗しました');
+    }
+  });
   </script>
 </body>
 </html>
