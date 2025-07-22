@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>フォント変換ツール</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -37,6 +37,7 @@
       background: linear-gradient(135deg, #f5f7ff 0%, #f0f4ff 100%);
       color: var(--dark);
       line-height: 1.6;
+      -webkit-tap-highlight-color: transparent;
     }
 
     #container {
@@ -388,37 +389,110 @@
       font-size: 1.3rem;
     }
 
+    .character-count {
+      position: absolute;
+      bottom: 12px;
+      right: 15px;
+      font-size: 0.85rem;
+      color: #90a4ae;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    /* スマホ版UIの強化 */
     @media (max-width: 650px) {
       body {
-        padding: 15px;
+        padding: 10px;
+        display: block;
+        min-height: 100vh;
       }
       
       #container {
-        padding: 20px;
+        padding: 20px 15px;
+        margin: 10px auto 30px;
+        max-width: 95%;
       }
       
       .header h1 {
-        font-size: 1.9rem;
+        font-size: 1.7rem;
+      }
+      
+      .header p {
+        font-size: 0.95rem;
+        margin-top: 15px;
       }
       
       .actions {
         flex-direction: column;
-        gap: 15px;
+        gap: 12px;
+        margin: 25px 0 15px;
       }
       
       .button {
         width: 100%;
-        padding: 15px;
+        padding: 18px;
+        font-size: 1.1rem;
       }
       
       .fontlist {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+      }
+      
+      .fontlist button {
+        padding: 14px 5px;
+        font-size: 0.9rem;
+        flex-direction: row;
+        justify-content: center;
+        gap: 8px;
+      }
+      
+      .font-icon {
+        margin-bottom: 0;
+        width: 20px;
+        height: 20px;
       }
       
       .logo-svg {
-        width: 70px;
-        height: 70px;
+        width: 60px;
+        height: 60px;
+      }
+      
+      textarea {
+        font-size: 16px;
+        padding: 15px;
+      }
+      
+      .input-group label {
+        font-size: 1.05rem;
+      }
+      
+      .font-section h3 {
+        font-size: 1.15rem;
+      }
+      
+      .character-count {
+        bottom: 8px;
+        right: 10px;
+        font-size: 0.8rem;
+      }
+      
+      .footer {
+        margin-top: 25px;
+        padding-top: 20px;
+        font-size: 0.9rem;
+      }
+    }
+
+    /* タブレットサイズの調整 */
+    @media (max-width: 850px) and (min-width: 651px) {
+      #container {
+        max-width: 90%;
+      }
+      
+      .fontlist {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
       }
     }
 
@@ -444,17 +518,6 @@
       height: 250px;
       background: radial-gradient(circle, rgba(255, 112, 67, 0.08) 0%, transparent 70%);
       border-radius: 50%;
-    }
-
-    .character-count {
-      position: absolute;
-      bottom: 12px;
-      right: 15px;
-      font-size: 0.85rem;
-      color: #90a4ae;
-      background: rgba(255, 255, 255, 0.7);
-      padding: 2px 8px;
-      border-radius: 10px;
     }
   </style>
 </head>
@@ -543,7 +606,7 @@
   const styles = [
     { key: 'normal', label: '標準', icon: 'fas fa-font' },
     { key: 'bold', label: '太字', icon: 'fas fa-bold' },
-    { key: 'italic', label: '標準斜体', icon: 'fas fa-italic' },
+    { key: 'italic', label: '斜体', icon: 'fas fa-italic' },
     { key: 'bolditalic', label: '太字斜体', icon: 'fas fa-bold' },
     { key: 'sans', label: 'サンセリフ', icon: 'fas fa-text-width' },
     { key: 'sansBold', label: 'サンセリフ太字', icon: 'fas fa-bold' },
@@ -573,19 +636,19 @@
 
   const maps = {
     normal:   text => text,
-  italic:   function(text) {
-    // 'h' のみ特殊文字 ℎ (U+210E) を使い、他は従来通り
-    return text.replace(/[A-Za-z0-9]/g, function(c) {
-      if (c === 'h') return '\u210E';
-      if (/[A-Z]/.test(c) && 0x1D434 !== null) {
-        return String.fromCodePoint(0x1D434 + c.charCodeAt(0) - 65);
-      }
-      if (/[a-z]/.test(c) && 0x1D44E !== null) {
-        return String.fromCodePoint(0x1D44E + c.charCodeAt(0) - 97);
-      }
-      return c;
-    });
-  }, // 通常の傾斜
+    italic:   function(text) {
+      // 'h' のみ特殊文字 ℎ (U+210E) を使い、他は従来通り
+      return text.replace(/[A-Za-z0-9]/g, function(c) {
+        if (c === 'h') return '\u210E';
+        if (/[A-Z]/.test(c) && 0x1D434 !== null) {
+          return String.fromCodePoint(0x1D434 + c.charCodeAt(0) - 65);
+        }
+        if (/[a-z]/.test(c) && 0x1D44E !== null) {
+          return String.fromCodePoint(0x1D44E + c.charCodeAt(0) - 97);
+        }
+        return c;
+      });
+    }, // 通常の傾斜
     bold:     makeMap(0x1D400, 0x1D41A, 0x1D7CE),
     bolditalic:   makeMap(0x1D468, 0x1D482, null),
     sans:     makeMap(0x1D5A0, 0x1D5BA, null),
@@ -606,6 +669,7 @@
   const notification = document.getElementById('notification');
   const charCount = document.getElementById('charCount');
   let currentStyle = 'normal';
+  let notificationTimer = null; // 通知タイマーを管理する変数
 
   // =========================
   // フォントボタン生成
@@ -679,10 +743,16 @@
     try {
       await navigator.clipboard.writeText(output.value);
       
+      // 以前の通知タイマーをクリア
+      if (notificationTimer) clearTimeout(notificationTimer);
+      
       // 通知を表示
       notification.classList.add('show');
-      setTimeout(() => {
+      
+      // 新しいタイマーを設定（3秒後に非表示）
+      notificationTimer = setTimeout(() => {
         notification.classList.remove('show');
+        notificationTimer = null;
       }, 2500);
       
       // ボタンアニメーション
@@ -738,7 +808,7 @@
 
   // 初期化時にサンプルテキストを表示
   window.addEventListener('DOMContentLoaded', () => {
-    input.value = "Example";
+    input.value = "フォント変換ツール";
     charCount.textContent = input.value.length;
     updateOutput();
   });
