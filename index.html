@@ -537,10 +537,11 @@
     
     <div class="header">
       <div class="logo-container">
-        <!-- シンプルなビックリマーク（黒1色） -->
-        <button id="infoBtn" type="button" aria-label="対応文字種について" style="background:none;border:none;padding:0;margin-left:auto;position:absolute;top:8px;right:8px;z-index:2;display:none;width:32px;height:32px;">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-7h2v5h-2v-5zm0-4h2v2h-2V9z" fill="#222"/>
+        <!-- 一般的なビックリマークSVG（縦線＋点、右上端に配置・再調整） -->
+        <button id="infoBtn" type="button" aria-label="対応文字種について" style="background:none;border:none;padding:0;position:absolute;top:0;right:0;z-index:2;display:none;width:24px;height:24px;">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="3" width="2" height="8" rx="1" fill="#222"/>
+            <rect x="8" y="13" width="2" height="2" rx="1" fill="#222"/>
           </svg>
         </button>
       </div>
