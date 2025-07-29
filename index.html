@@ -69,12 +69,12 @@
     .logo-svg {
       width: 80px;
       height: 80px;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      /* background削除でグラデーション消去 */
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 6px 15px rgba(94, 53, 177, 0.3);
+      box-shadow: none;
     }
 
     .header h1 {
@@ -84,18 +84,6 @@
       position: relative;
       display: inline-block;
       font-weight: 700;
-    }
-
-    .header h1::after {
-      content: '';
-      position: absolute;
-      bottom: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 120px;
-      height: 5px;
-      background: linear-gradient(90deg, var(--primary), var(--secondary));
-      border-radius: 10px;
     }
 
     .header p {
@@ -549,11 +537,15 @@
     
     <div class="header">
       <div class="logo-container">
-        <div class="logo-svg">
-          <svg class="input-icon" viewBox="0 0 24 24" fill="white">
-            <path d="M20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />
+        <!-- ロゴ完全削除 -->
+        <!-- モバイル用ビックリ丸 -->
+        <button id="infoBtn" type="button" aria-label="対応文字種について" style="background:none;border:none;padding:0;margin-left:auto;position:absolute;top:0;right:0;z-index:2;display:none;">
+          <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="19" cy="19" r="19" fill="#fff3e0"/>
+            <circle cx="19" cy="19" r="16" fill="#ff7043"/>
+            <text x="19" y="26" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" fill="#fff" font-weight="bold">!</text>
           </svg>
-        </div>
+        </button>
       </div>
       <h1>フォント変換ツール</h1>
     </div>
@@ -566,7 +558,7 @@
           <path fill="currentColor" d="M20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />
         </svg>
         入力テキスト
-        <span style="color:#e53935; font-size:0.95em; margin-left:10px; vertical-align:middle;">※英語アルファベット・数字のみ対応</span>
+        <span id="inputNotice" style="color:#e53935; font-size:0.95em; margin-left:10px; vertical-align:middle;display:inline;">※英語アルファベット・数字のみ対応</span>
         </label>
         <textarea id="input" placeholder="ここに変換したいテキストを入力してください..." rows="3"></textarea>
         <div class="character-count"><span id="charCount">0</span> 文字</div>
@@ -618,10 +610,58 @@
   </div>
 
   <div class="notification" id="notification">
-    <i class="fas fa-check-circle"></i> 変換結果をクリップボードにコピーしました！
+    <i class="fas fa-check-circle"></i> 変換結果をコピーしました！
+  </div>
+
+  <!-- 注意ポップアップ -->
+  <div id="noticePopup" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;background:rgba(0,0,0,0.25);align-items:center;justify-content:center;">
+    <div style="background:#fff;padding:28px 22px 18px 22px;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,0.18);max-width:90vw;text-align:center;position:relative;">
+      <button id="closeNotice" style="position:absolute;top:8px;right:10px;background:none;border:none;font-size:1.7rem;color:#ff7043;cursor:pointer;">&times;</button>
+      <div style="font-size:1.15rem;color:#e53935;font-weight:600;margin-bottom:8px;">※英語アルファベット・数字のみ対応</div>
+      <div style="font-size:0.98rem;color:#666;">このツールは英語アルファベット（A-Z, a-z）と数字（0-9）のみ変換できます。<br>日本語や記号は変換対象外です。</div>
+    </div>
   </div>
 
   <script>
+  // =========================
+  // モバイル用ビックリ丸表示制御
+  // =========================
+  function isMobile() {
+    return window.matchMedia && window.matchMedia('(max-width: 650px)').matches;
+  }
+  function updateInfoBtnDisplay() {
+    const infoBtn = document.getElementById('infoBtn');
+    const inputNotice = document.getElementById('inputNotice');
+    if (!infoBtn || !inputNotice) return;
+    if (isMobile()) {
+      infoBtn.style.display = 'block';
+      inputNotice.style.display = 'none';
+    } else {
+      infoBtn.style.display = 'none';
+      inputNotice.style.display = 'inline';
+    }
+  }
+  window.addEventListener('resize', updateInfoBtnDisplay);
+  window.addEventListener('DOMContentLoaded', updateInfoBtnDisplay);
+
+  // ポップアップ制御
+  document.addEventListener('DOMContentLoaded', function() {
+    const infoBtn = document.getElementById('infoBtn');
+    const noticePopup = document.getElementById('noticePopup');
+    const closeNotice = document.getElementById('closeNotice');
+    if (infoBtn && noticePopup && closeNotice) {
+      infoBtn.addEventListener('click', function() {
+        noticePopup.style.display = 'flex';
+      });
+      closeNotice.addEventListener('click', function() {
+        noticePopup.style.display = 'none';
+      });
+      noticePopup.addEventListener('click', function(e) {
+        if (e.target === noticePopup) noticePopup.style.display = 'none';
+      });
+    }
+  });
+
   // =========================
   // フォントスタイル定義
   // =========================
