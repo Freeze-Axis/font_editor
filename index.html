@@ -375,7 +375,7 @@
       background: var(--success);
       color: white;
       padding: 16px 35px;
-      border-radius: 50px;
+      border-radius: 32px;
       font-weight: 600;
       box-shadow: 0 6px 20px rgba(102, 187, 106, 0.45);
       transition: transform 0.4s ease, opacity 0.4s ease;
@@ -384,6 +384,20 @@
       align-items: center;
       font-size: 1.1rem;
       pointer-events: none;
+      min-width: 260px;
+      max-width: 96vw;
+      width: 350px;
+      text-align: center;
+      word-break: keep-all;
+      white-space: pre-line;
+    }
+    @media (max-width: 480px) {
+      .notification {
+        width: 90vw;
+        min-width: 0;
+        font-size: 1rem;
+        padding: 14px 6px;
+      }
     }
 
     .notification.show {
@@ -548,10 +562,11 @@
       <!-- 元テキスト入力用 -->
       <div class="input-group">
         <label for="input">
-          <svg class="input-icon" viewBox="0 0 24 24">
-            <path fill="currentColor" d="M20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />
-          </svg>
-          入力テキスト
+        <svg class="input-icon" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />
+        </svg>
+        入力テキスト
+        <span style="color:#e53935; font-size:0.95em; margin-left:10px; vertical-align:middle;">※英語アルファベット・数字のみ対応</span>
         </label>
         <textarea id="input" placeholder="ここに変換したいテキストを入力してください..." rows="3"></textarea>
         <div class="character-count"><span id="charCount">0</span> 文字</div>
@@ -794,7 +809,7 @@
     const url = encodeURIComponent(window.location.href);
     const hashtags = encodeURIComponent("フォント変換,Webツール,Freeze,discord,つっくん");
     
-    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=${hashtags}`, '_blank');
+    window.open(`https://x.com/intent/tweet?text=${text}&url=${url}&hashtags=${hashtags}`, '_blank');
   });
 
   // =========================
@@ -822,7 +837,7 @@
 
   // 初期化時にサンプルテキストを表示
   window.addEventListener('DOMContentLoaded', () => {
-    input.value = "フォント変換ツール";
+    input.value = "Test";
     charCount.textContent = input.value.length;
     updateOutput();
   });
